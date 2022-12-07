@@ -149,10 +149,81 @@ const getStoreProductList = async (storeId) => {
   );
 };
 
+const createProduct = async (name, description, price, location, latitude, longitude, product_status_id, category_id, user_id, image_url) => {
+    const product = await appDataSource.query(
+        `    
+        INSERT INTO products (
+          name,
+          description,
+          price,
+          location,
+          latitude,
+          longitude,
+          product_status_id,
+          category_id,
+          user_id
+        ) VALUES (
+          ?,
+          ?,
+          ?,
+          ?,
+          ?,
+          ?,
+          ?,
+          ?,
+          ?
+        );
+        `,
+        [name, description, price, location, latitude, longitude, product_status_id, category_id, user_id]
+    );
+    
+    const imageBulk = image_url.map((image_url) => {
+      return `(${product.insertId}, "${image_url}")`;
+    })
+    const values = imageBulk.join(", "); 
+    
+    const productImages = await appDataSource.query(
+        `INSERT INTO product_images (
+            product_id, 
+            image_url
+        ) VALUES ${values}`
+    );
+}
+
+const productUpdate = async (setClause, imageBulks, productId) => {
+    const product = await appDataSource.query(
+        `
+        UPDATE products
+        ${setClause}
+        WHERE id = ?;
+        `,
+        [productId]
+    );
+    
+    const productImageDelete = await appDataSource.query(
+        `
+        DELETE FROM product_images
+        WHERE product_id = ?
+        `,
+        [productId]
+    );
+
+    const productImageAdd = await appDataSource.query(
+        `
+        INSERT INTO product_images ( 
+            product_id, 
+            image_url 
+        ) VALUES ${imageBulks}
+        `
+    );
+    return productImageAdd;
+};
+
 module.exports = {
   getProductList,
   getproductDetail,
   getStoreReivew,
   getStoreInfor,
   getStoreProductList,
+  createProduct, productUpdate
 };
