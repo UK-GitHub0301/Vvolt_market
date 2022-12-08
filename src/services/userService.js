@@ -5,6 +5,7 @@ const { raiseCustomError } = require('../utils/Error');
 let isMember = false;
 
 const kakaoLogin = async (code) => {
+  console.log('code: ',code)
   const result = await axios({
     url: 'https://kauth.kakao.com/oauth/token',
     method: 'POST',

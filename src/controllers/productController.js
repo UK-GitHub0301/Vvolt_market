@@ -1,4 +1,5 @@
 const productService = require('../services/productService');
+const likeService = require('../services/likeService')
 const { catchAsync } = require('../utils/Error');
 
 const getAllProducts = catchAsync(async (req, res) => {
@@ -8,9 +9,10 @@ const getAllProducts = catchAsync(async (req, res) => {
 
 const getProductDetail = catchAsync(async (req, res) => {
   const { productId } = req.params;
-
-  const productDetailData = await productService.getProductDetail(productId);
-  res.status(200).json(productDetailData);
+  const [user] = req.userId;
+  const productDetailData  = await productService.getProductDetail(productId);
+  const isLike = await likeService.getLike(user.id, productId)
+  res.status(200).json({ productDetailData, isLike });
 });
 
 const getStoreProductList = catchAsync(async (req, res) => {
@@ -22,7 +24,7 @@ const getStoreProductList = catchAsync(async (req, res) => {
 const createProduct = catchAsync(async (req, res) => {
     const { name, description, price, location, latitude, longitude, product_status_id, category_id, image_url} = req.body;
     const user_id = req.userId[0].id;
-    console.log(name, description, price, location, latitude, longitude, product_status_id, category_id, image_url)
+
     if (!name || !description || !price || !location || !latitude || !longitude || !product_status_id || !category_id || !user_id || !image_url) {
         const err = new Error("KEY_ERROR");
         err.statusCode = 400;

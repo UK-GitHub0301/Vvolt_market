@@ -67,39 +67,39 @@ const getproductDetail = async (productId) => {
 const getStoreInfor = async (productId) => {
   return await appDataSource.query(
     `
-      SELECT DISTINCT
-        u.id storeId,
-        u.nickName,
-        u.user_image userImage,
-        p.price,
-        pi.images,
-        (SELECT
-          COUNT(p.id) Count
-          FROM products p
-          WHERE p.user_id = u.id
-        ) productCount,
-        (SELECT
-          COUNT(f.id) Count
-          FROM follow f
-          WHERE f.followee = u.id
-        ) followerCount
+    SELECT DISTINCT
+    u.id storeId,
+    u.nickName,
+    u.user_image userImage,
+    p.price,
+    pi.images,
+    (SELECT
+      COUNT(p.id) Count
       FROM products p
-      LEFT JOIN users u ON p.user_id = u.id
-      LEFT JOIN (
-        SELECT 
-          product_id,
-          JSON_ARRAYAGG(
-            image_url
-          ) as images
-        FROM product_images
-        GROUP BY product_id
-      ) pi ON p.id = pi.product_id
-      WHERE p.user_id IN (
-        SELECT id
-        FROM products
-        WHERE id = ?
-      )
-      `,
+      WHERE p.user_id = u.id
+    ) productCount,
+    (SELECT
+      COUNT(f.id) Count
+      FROM follow f
+      WHERE f.followee = u.id
+    ) followerCount
+  FROM products p
+  LEFT JOIN users u ON p.user_id = u.id
+  LEFT JOIN (
+    SELECT 
+      product_id,
+      JSON_ARRAYAGG(
+        image_url
+      ) as images
+    FROM product_images
+    GROUP BY product_id
+  ) pi ON p.id = pi.product_id
+  WHERE p.user_id IN (
+    SELECT p.user_id
+    FROM products p
+    WHERE p.id = ?
+  )
+  `,
     [productId]
   );
 };
@@ -219,11 +219,33 @@ const productUpdate = async (setClause, imageBulks, productId) => {
     return productImageAdd;
 };
 
+
+const getProductId = async (productId) => {
+  try {
+    const [checkId] = await appDataSource.query(
+      `
+        SELECT
+        products.id
+        FROM products
+        WHERE products.id = ?
+      `,
+      [productId]
+    );
+    return checkId;
+  } catch (err) {
+    const error = new Error('INVALID_DATA_INPUT');
+    error.statusCode = 500;
+    throw error;
+  }
+};
+
 module.exports = {
   getProductList,
   getproductDetail,
   getStoreReivew,
   getStoreInfor,
   getStoreProductList,
-  createProduct, productUpdate
+  createProduct, 
+  productUpdate,
+  getProductId
 };

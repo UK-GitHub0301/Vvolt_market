@@ -1,4 +1,5 @@
 const userService = require('../services/userService');
+const followService = require('../services/followService');
 const { catchAsync, raiseCustomError } = require('../utils/Error');
 
 const kakaoLogin = catchAsync(async (req, res) => {
@@ -33,10 +34,11 @@ const getUserDetail = catchAsync(async (req, res) => {
     
     const [ shopInfo ] = await userService.getUserDetail(userId);
     const [ myInfo ] = await userService.getUserDetail(userIdByToken);
-    
+    const isFollow = await followService.getFollow(userIdByToken, userId);
     return res.status(200).json(
         {
             "isMyShop" : flag(userId, userIdByToken),
+            "isFollow" : isFollow,
             "myData" : {
                 "writerId" : myInfo.sellerId, 
                 "writerName" : myInfo.sellerName,
@@ -52,11 +54,10 @@ const getUserDetail = catchAsync(async (req, res) => {
 });
 
 const userUpdate = catchAsync(async (req, res) => {
-    console.log(req.userId)
+    
     const userId = req.userId[0].id;
-    console.log(userId)
     const { nickname, description, address, latitude, longitude } = req.body;
-    console.log(req.file)
+    
     let user_image = "";
     if(req.file){
       user_image = req.file.location;
